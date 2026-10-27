@@ -86,4 +86,56 @@ router.get('/shelf/:user_id', (req, res) => {
     });
 });
 
+// 5. POST /api/books/register - Kasutaja registreerimine andmebaasi
+router.post('/register', (req, res) => {
+const { username, email, password } = req.body; 
+
+if (!username || !email || !password) {
+return res.status(400).json({ error: "Kõik väljad on kohustuslikud" });
+}
+
+// MVP lihtsuse mõttes salvestame parooli puhtalt (kolledži projektis lubatud, kui aega on vähe)
+// Päris projektis kasutataks siin parooli räsipääsu (password_hash)
+const sql = "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)";
+
+db.run(sql, [username, email, password], function(err) {
+if (err) {
+if (err.message.includes('UNIQUE')) {
+return res.status(400).json({ error: "Kasutajanimi või e-post on juba olemas" });
+}
+return res.status(500).json({ error: err.message });
+}
+res.status(201).json({
+message: "Kasutaja registreeritud",
+user: { id: this.lastID, username }
+});
+});
+
+}); 
+
+// 6. POST /api/books/login - Kasutaja sisselogimise kontroll
+router.post('/login', (req, res) => {
+const { username, password } = req.body; 
+
+if (!username || !password) {
+return res.status(400).json({ error: "Kasutajanimi ja parool on kohustuslikud" });
+}
+
+const sql = "SELECT * FROM users WHERE username = ? AND password_hash = ?";
+
+db.get(sql, [username, password], (err, row) => {
+if (err) {
+return res.status(500).json({ error: err.message });
+}
+if (!row) {
+return res.status(401).json({ error: "Vale kasutajanimi või parool" });
+}
+res.json({
+message: "Sisselogimine edukas",
+user: { id: row.id, username: row.username }
+});
+});
+
+});
+
 module.exports = router;

@@ -1,198 +1,1023 @@
 <!DOCTYPE html>
-<html lang="et">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiveLib Kloon — Minu Raamatukogu</title>
-    <!-- Tailwind CSS disaini jaoks -->
-    <script src="https://tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans text-gray-800">
+    <meta name="theme-color" content="#f8f7f5">
+    <title>LiveLib Books</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #38281d;
+            --muted: #77736f;
+            --line: #dedbd7;
+            --green: #399b68;
+            --green-dark: #2f8558;
+            --teal: #167b78;
+            --paper: #fff;
+            --nav: #f8f7f5;
+        }
 
-    <!-- Päis / Header -->
-    <header class="bg-orange-500 text-white shadow-md">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold tracking-wide">📚 LiveLib <span class="text-sm font-normal bg-orange-700 px-2 py-1 rounded">College Edition</span></h1>
-            <div class="flex items-center gap-4">
-                <!-- Nupp uue raamatu lisamise vormi avamiseks -->
-                <button onclick="toggleModal(true)" class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded transition shadow">
-                    + Lisa uus raamat
-                </button>
-                <span class="font-medium text-sm hidden sm:inline">Kasutaja ID: 1</span>
-            </div>
-        </div>
-    </header>
+        * {
+            box-sizing: border-box;
+        }
 
-    <!-- Peamine sisu -->
-    <main class="container mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-        
-        <!-- Vasak veerg: Raamatute kataloog -->
-        <div class="md:col-span-2">
-            <h2 class="text-xl font-bold mb-4 flex items-center">📖 Raamatute kataloog</h2>
-            <div id="catalog" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <p class="text-gray-500">Kataloogi laadimine...</p>
-            </div>
-        </div>
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: #333;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+        }
 
-        <!-- Parem veerg: Kasutaja riiul -->
-        <div class="bg-white p-6 rounded-lg shadow-md h-fit">
-            <h2 class="text-xl font-bold mb-4 text-orange-600">🧡 Minu riiul ("Loen")</h2>
-            <div id="my-shelf" class="space-y-4">
-                <p class="text-gray-500 text-sm">Riiul on tühi. Lisa raamat kataloogist!</p>
-            </div>
-        </div>
+        button,
+        input,
+        textarea {
+            font: inherit;
+        }
 
-    </main>
+        button,
+        a {
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    <!-- Modaalaken (Vorm uue raamatu lisamiseks) -->
-    <div id="bookModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-900">Lisa uus raamat andmebaasi</h3>
-                <button onclick="toggleModal(false)" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
-            </div>
-            <form id="addBookForm" onsubmit="createNewBook(event)">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-1">Pealkiri *</label>
-                    <input type="text" id="bookTitle" required class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:border-orange-500">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-1">Autor *</label>
-                    <input type="text" id="bookAuthor" required class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:border-orange-500">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-1">Kirjeldus</label>
-                    <textarea id="bookDescription" rows="3" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:border-orange-500"></textarea>
-                </div>
-                <div class="flex justify-end gap-2">
-                    <button type="button" onclick="toggleModal(false)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded font-medium text-sm transition">Tühista</button>
-                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium text-sm transition">Salvesta</button>
-                </div>
-            </form>
-        </div>
-    </div>
+        .seasonal-banner {
+            display: flex;
+            min-height: 36px;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 6px 16px;
+            background: #4b4b49;
+            color: #fff;
+            font-size: 12px;
+        }
 
-    <!-- Kliendipoolne loogika (Frontend JavaScript) -->
-    <script>
-        const API_URL = 'http://localhost:5000/api/books';
-        const USER_ID = 1; // Testkasutaja ID (MVP jaoks)
+        .seasonal-banner strong {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 15px;
+        }
 
-        // Avab või sulgeb uue raamatu lisamise akna
-        function toggleModal(show) {
-            const modal = document.getElementById('bookModal');
-            if (show) {
-                modal.classList.remove('hidden');
-            } else {
-                modal.classList.add('hidden');
-                document.getElementById('addBookForm').reset();
+        .seasonal-icon {
+            font-size: 17px;
+        }
+
+        .site-nav {
+            min-height: 48px;
+            border-bottom: 1px solid #e8e5e2;
+            background: var(--nav);
+        }
+
+        .nav-inner {
+            display: flex;
+            width: min(1110px, calc(100% - 32px));
+            min-height: 48px;
+            align-items: center;
+            gap: 28px;
+            margin: 0 auto;
+        }
+
+        .brand {
+            flex: 0 0 auto;
+            color: #211b17;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 25px;
+            letter-spacing: -1.5px;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            gap: 27px;
+        }
+
+        .nav-links a,
+        .nav-action {
+            color: var(--ink);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .nav-links a:hover,
+        .nav-action:hover {
+            color: var(--teal);
+        }
+
+        .search-form {
+            position: relative;
+            display: flex;
+            flex: 1 1 300px;
+            min-width: 120px;
+        }
+
+        .search-form input {
+            width: 100%;
+            height: 31px;
+            padding: 5px 38px 5px 9px;
+            border: 1px solid #d9d4ce;
+            border-radius: 4px;
+            outline: none;
+            background: #fff;
+            color: #333;
+        }
+
+        .search-form input:focus {
+            border-color: #9eaaa2;
+            box-shadow: 0 0 0 2px rgb(57 155 104 / 12%);
+        }
+
+        .search-form button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: grid;
+            width: 36px;
+            height: 31px;
+            place-items: center;
+            border: 0;
+            background: transparent;
+            color: #292929;
+            cursor: pointer;
+        }
+
+        .search-form svg {
+            width: 19px;
+            height: 19px;
+        }
+
+        .nav-action {
+            border: 0;
+            padding: 0;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .join-action {
+            padding: 7px 12px;
+            border-radius: 3px;
+            background: #f7bd4c;
+            color: #332515;
+        }
+
+        .join-action:hover {
+            background: #eaae3a;
+            color: #332515;
+        }
+
+        .promo {
+            display: flex;
+            width: min(438px, calc(100% - 32px));
+            min-height: 63px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin: 10px auto 20px;
+            padding: 10px 16px;
+            border: 1px solid #e7dfa1;
+            border-radius: 5px;
+            background: #fffbd4;
+            color: #4c4941;
+        }
+
+        .promo-copy {
+            line-height: 1.25;
+            text-align: center;
+        }
+
+        .promo-copy strong {
+            display: block;
+            font-size: 14px;
+        }
+
+        .promo-copy span {
+            display: block;
+            font-size: 14px;
+        }
+
+        .promo button {
+            flex: 0 0 auto;
+            border: 0;
+            border-radius: 3px;
+            padding: 7px 11px;
+            background: #f7bd4c;
+            color: #30261a;
+            cursor: pointer;
+        }
+
+        .promo button:hover {
+            background: #eaae3a;
+        }
+
+        main {
+            width: min(904px, calc(100% - 32px));
+            margin: 0 auto;
+        }
+
+        .breadcrumbs {
+            margin: 0 0 9px;
+            color: #45413d;
+            font-size: 11px;
+        }
+
+        .breadcrumbs a {
+            color: var(--teal);
+            text-decoration: none;
+        }
+
+        h1,
+        h2,
+        h3,
+        .book-title {
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        h1 {
+            margin: 0 0 13px;
+            color: var(--ink);
+            font-size: 25px;
+            line-height: 1.2;
+        }
+
+        .results-count {
+            margin: 0 0 2px;
+            color: #3d3a37;
+            font-size: 11px;
+        }
+
+        .book-list {
+            width: min(100%, 590px);
+        }
+
+        .book-row {
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr) 128px;
+            gap: 10px;
+            min-height: 90px;
+            align-items: start;
+            padding: 10px 6px 9px 5px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .book-cover {
+            position: relative;
+            display: flex;
+            width: 44px;
+            height: 70px;
+            overflow: hidden;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            background: linear-gradient(145deg, #c9a76b, #695137);
+            box-shadow: 1px 2px 3px rgb(0 0 0 / 20%);
+            color: #fff9e8;
+            text-align: center;
+        }
+
+        .book-cover::after {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 3px;
+            width: 2px;
+            background: rgb(255 255 255 / 24%);
+            content: "";
+        }
+
+        .book-cover span {
+            overflow: hidden;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 8px;
+            font-weight: 700;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+
+        .book-cover img {
+            position: absolute;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .book-details {
+            min-width: 0;
+            padding-top: 1px;
+        }
+
+        .book-title {
+            margin: 0 0 3px;
+            color: #3e3025;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .book-author {
+            margin: 0 0 3px;
+            color: #34302c;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .book-description {
+            display: -webkit-box;
+            overflow: hidden;
+            margin: 0;
+            color: #96918c;
+            font-size: 11px;
+            line-height: 1.35;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+
+        .book-actions {
+            padding-top: 0;
+            text-align: center;
+        }
+
+        .shelf-button {
+            display: flex;
+            width: 100%;
+            min-height: 27px;
+            align-items: stretch;
+            justify-content: space-between;
+            border: 0;
+            border-radius: 2px;
+            padding: 0;
+            background: var(--green);
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .shelf-button:hover {
+            background: var(--green-dark);
+        }
+
+        .shelf-button:disabled {
+            background: #777;
+            cursor: default;
+        }
+
+        .shelf-button-label {
+            flex: 1;
+            padding: 6px 7px;
+            text-align: left;
+        }
+
+        .shelf-button-caret {
+            display: grid;
+            width: 25px;
+            place-items: center;
+            border-left: 1px solid rgb(255 255 255 / 18%);
+            font-size: 10px;
+        }
+
+        .rate-label {
+            display: block;
+            margin: 3px 0 0;
+            color: #aaa6a2;
+            font-size: 10px;
+        }
+
+        .rating-stars {
+            display: block;
+            color: #d3d1cf;
+            font-size: 16px;
+            letter-spacing: -2px;
+            line-height: 1.1;
+        }
+
+        .notice {
+            margin: 10px 0;
+            border-radius: 4px;
+            padding: 10px 12px;
+            background: #f6f3ef;
+            color: #5c554e;
+            font-size: 13px;
+        }
+
+        .notice[hidden] {
+            display: none;
+        }
+
+        .notice.error {
+            background: #fff0ef;
+            color: #a3312b;
+        }
+
+        .shelf-section {
+            width: min(100%, 590px);
+            margin: 32px 0 48px;
+            border-top: 1px solid var(--line);
+            padding-top: 18px;
+            scroll-margin-top: 16px;
+        }
+
+        .shelf-section h2 {
+            margin: 0 0 12px;
+            color: var(--ink);
+            font-size: 20px;
+        }
+
+        .shelf-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .shelf-item {
+            display: flex;
+            min-height: 50px;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #efedeb;
+            padding: 5px;
+        }
+
+        .shelf-item .book-cover {
+            width: 28px;
+            height: 39px;
+        }
+
+        .shelf-item .book-cover span {
+            font-size: 6px;
+        }
+
+        .shelf-item-copy {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .shelf-item-title {
+            overflow: hidden;
+            margin: 0 0 3px;
+            color: #3e3025;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 13px;
+            font-weight: 700;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .shelf-item-author,
+        .shelf-status {
+            margin: 0;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            z-index: 10;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgb(30 25 21 / 48%);
+        }
+
+        .modal-backdrop[hidden] {
+            display: none;
+        }
+
+        .modal {
+            width: min(100%, 430px);
+            border-radius: 6px;
+            padding: 22px;
+            background: #fff;
+            box-shadow: 0 12px 40px rgb(0 0 0 / 24%);
+        }
+
+        .modal-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .modal-heading h2 {
+            margin: 0;
+            color: var(--ink);
+            font-size: 20px;
+        }
+
+        .modal-close {
+            border: 0;
+            background: transparent;
+            color: #777;
+            cursor: pointer;
+            font-size: 25px;
+            line-height: 1;
+        }
+
+        .form-field {
+            display: grid;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .form-field label {
+            color: #4c443d;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .form-field input,
+        .form-field textarea {
+            width: 100%;
+            border: 1px solid #d9d4ce;
+            border-radius: 4px;
+            padding: 9px 10px;
+            outline: none;
+        }
+
+        .form-field input:focus,
+        .form-field textarea:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 2px rgb(57 155 104 / 12%);
+        }
+
+        .form-error {
+            margin: 0 0 12px;
+            color: #a3312b;
+            font-size: 13px;
+        }
+
+        .modal-submit {
+            display: block;
+            margin-left: auto;
+            border: 0;
+            border-radius: 3px;
+            padding: 9px 15px;
+            background: var(--green);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .modal-submit:hover {
+            background: var(--green-dark);
+        }
+
+        @media (max-width: 760px) {
+            .nav-inner {
+                flex-wrap: wrap;
+                gap: 12px 18px;
+                padding: 9px 0;
+            }
+
+            .brand {
+                margin-right: auto;
+                font-size: 23px;
+            }
+
+            .nav-links {
+                order: 3;
+                width: 100%;
+                justify-content: space-between;
+                gap: 12px;
+                font-size: 13px;
+            }
+
+            .search-form {
+                order: 4;
+                flex-basis: 100%;
+            }
+
+            .nav-action {
+                font-size: 13px;
+            }
+
+            main {
+                width: min(100% - 24px, 590px);
             }
         }
 
-        // Laeb kõik raamatud andmebaasist ja kuvab kataloogis
+        @media (max-width: 480px) {
+            .seasonal-banner {
+                font-size: 10px;
+            }
+
+            .seasonal-banner strong {
+                font-size: 13px;
+            }
+
+            .promo {
+                gap: 8px;
+                padding: 9px;
+            }
+
+            .promo-copy strong,
+            .promo-copy span {
+                font-size: 12px;
+            }
+
+            .promo button {
+                padding: 7px 8px;
+                font-size: 11px;
+            }
+
+            h1 {
+                font-size: 23px;
+            }
+
+            .book-row {
+                grid-template-columns: 40px minmax(0, 1fr);
+                gap: 9px;
+                padding-right: 1px;
+                padding-left: 1px;
+            }
+
+            .book-cover {
+                width: 40px;
+                height: 64px;
+            }
+
+            .book-actions {
+                grid-column: 2;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-top: -1px;
+                text-align: left;
+            }
+
+            .shelf-button {
+                width: 137px;
+                flex: 0 0 auto;
+            }
+
+            .rate-label {
+                display: none;
+            }
+
+            .rating-stars {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="seasonal-banner" aria-label="Featured genre">
+        <span class="seasonal-icon" aria-hidden="true">☠</span>
+        <strong>Horror Hits</strong>
+        <span>Top genre titles to help you find your next spooky season read</span>
+        <span aria-hidden="true">›</span>
+    </div>
+
+    <header class="site-nav" id="top">
+        <nav class="nav-inner" aria-label="Main navigation">
+            <a class="brand" href="#top" aria-label="LiveLib home">livelib</a>
+            <div class="nav-links">
+                <a href="#top">Home</a>
+                <a href="#my-books">My Books</a>
+                <a href="#book-list">Browse <span aria-hidden="true">⌄</span></a>
+                <a href="#my-books">Community <span aria-hidden="true">⌄</span></a>
+            </div>
+            <form class="search-form" id="search-form" role="search">
+                <input id="book-search" type="search" placeholder="Search books" aria-label="Search books">
+                <button type="submit" aria-label="Search">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="2.2"></circle>
+                        <path d="m16 16 5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+                    </svg>
+                </button>
+            </form>
+            <button class="nav-action join-action" id="add-book-action" type="button">+ Add a book</button>
+        </nav>
+    </header>
+
+    <aside class="promo" aria-label="Discover books">
+        <div class="promo-copy">
+            <strong>Discover new books on LiveLib</strong>
+            <span>Meet your next favorite book</span>
+        </div>
+        <button id="browse-books" type="button">Browse books</button>
+    </aside>
+
+    <main>
+        <p class="breadcrumbs"><a href="#top">Shelves</a> &gt; <a href="#book-list">LiveLib</a> &gt;</p>
+        <h1 id="page-title">Livelib Books</h1>
+        <p class="results-count" id="results-count" aria-live="polite">Loading books…</p>
+        <div class="book-list" id="book-list" aria-live="polite"></div>
+        <p class="notice" id="catalog-notice" role="status" hidden></p>
+
+        <section class="shelf-section" id="my-books" aria-labelledby="shelf-title">
+            <h2 id="shelf-title">My Books</h2>
+            <div class="shelf-list" id="shelf-list">
+                <p class="notice">Your shelf is empty. Add a book to get started.</p>
+            </div>
+            <p class="notice error" id="shelf-notice" role="alert" hidden></p>
+        </section>
+    </main>
+
+    <div class="modal-backdrop" id="book-modal" hidden>
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal-heading">
+                <h2 id="modal-title">Add a book</h2>
+                <button class="modal-close" id="close-modal" type="button" aria-label="Close">&times;</button>
+            </div>
+            <form id="add-book-form">
+                <div class="form-field">
+                    <label for="book-title">Title *</label>
+                    <input id="book-title" name="title" type="text" required maxlength="200">
+                </div>
+                <div class="form-field">
+                    <label for="book-author">Author *</label>
+                    <input id="book-author" name="author" type="text" required maxlength="160">
+                </div>
+                <div class="form-field">
+                    <label for="book-description">Description</label>
+                    <textarea id="book-description" name="description" rows="3" maxlength="1000"></textarea>
+                </div>
+                <p class="form-error" id="form-error" role="alert" hidden></p>
+                <button class="modal-submit" type="submit">Save book</button>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        const API_URL = '/api/books';
+        const USER_ID = 1;
+        const coverColors = [
+            ['#c5a45e', '#66503b'],
+            ['#425b45', '#14251f'],
+            ['#a7a78a', '#48534a'],
+            ['#476798', '#243e69'],
+            ['#8caa3c', '#365e29'],
+            ['#78939a', '#30444b']
+        ];
+        let allBooks = [];
+        let shelfIds = new Set();
+
+        const bookList = document.getElementById('book-list');
+        const searchInput = document.getElementById('book-search');
+        const resultsCount = document.getElementById('results-count');
+        const catalogNotice = document.getElementById('catalog-notice');
+        const shelfList = document.getElementById('shelf-list');
+        const shelfNotice = document.getElementById('shelf-notice');
+        const modal = document.getElementById('book-modal');
+        const addBookForm = document.getElementById('add-book-form');
+        const formError = document.getElementById('form-error');
+
+        function setNotice(element, message, isError = false) {
+            element.textContent = message;
+            element.classList.toggle('error', isError);
+            element.hidden = !message;
+        }
+
+        function makeCover(book, index) {
+            const cover = document.createElement('div');
+            cover.className = 'book-cover';
+            cover.setAttribute('aria-hidden', 'true');
+            const [start, end] = coverColors[index % coverColors.length];
+            cover.style.background = `linear-gradient(145deg, ${start}, ${end})`;
+
+            const label = document.createElement('span');
+            label.textContent = book.title;
+            cover.append(label);
+
+            if (book.cover_url && /^https?:\/\//i.test(book.cover_url)) {
+                try {
+                    const coverUrl = new URL(book.cover_url);
+                    if (coverUrl.hostname !== 'placeholder.com' && coverUrl.hostname !== 'www.placeholder.com') {
+                        const image = document.createElement('img');
+                        image.src = coverUrl.href;
+                        image.alt = '';
+                        image.loading = 'lazy';
+                        image.addEventListener('error', () => image.remove(), { once: true });
+                        cover.append(image);
+                    }
+                } catch (error) {
+                    console.warn('Skipping invalid book cover URL:', error);
+                }
+            }
+
+            return cover;
+        }
+
+        function renderBooks(books) {
+            bookList.replaceChildren();
+            resultsCount.textContent = `Showing ${books.length} ${books.length === 1 ? 'book' : 'books'}`;
+
+            if (books.length === 0) {
+                const emptyMessage = document.createElement('p');
+                emptyMessage.className = 'notice';
+                emptyMessage.textContent = allBooks.length ? 'No books match your search.' : 'No books have been added yet.';
+                bookList.append(emptyMessage);
+                return;
+            }
+
+            books.forEach((book, index) => {
+                const row = document.createElement('article');
+                row.className = 'book-row';
+                row.append(makeCover(book, index));
+
+                const details = document.createElement('div');
+                details.className = 'book-details';
+                const title = document.createElement('h2');
+                title.className = 'book-title';
+                title.textContent = book.title;
+                const author = document.createElement('p');
+                author.className = 'book-author';
+                author.textContent = `by ${book.author}`;
+                details.append(title, author);
+                if (book.description) {
+                    const description = document.createElement('p');
+                    description.className = 'book-description';
+                    description.textContent = book.description;
+                    details.append(description);
+                }
+
+                const actions = document.createElement('div');
+                actions.className = 'book-actions';
+                const shelfButton = document.createElement('button');
+                shelfButton.className = 'shelf-button';
+                shelfButton.type = 'button';
+                shelfButton.disabled = shelfIds.has(book.id);
+                shelfButton.setAttribute('aria-label', shelfIds.has(book.id)
+                    ? `${book.title} is on your shelf`
+                    : `Add ${book.title} to your want-to-read shelf`);
+                const buttonLabel = document.createElement('span');
+                buttonLabel.className = 'shelf-button-label';
+                buttonLabel.textContent = shelfIds.has(book.id) ? 'On My Books' : 'Want to Read';
+                const caret = document.createElement('span');
+                caret.className = 'shelf-button-caret';
+                caret.setAttribute('aria-hidden', 'true');
+                caret.textContent = '▾';
+                shelfButton.append(buttonLabel, caret);
+                shelfButton.addEventListener('click', () => addToShelf(book));
+
+                const rateLabel = document.createElement('span');
+                rateLabel.className = 'rate-label';
+                rateLabel.textContent = 'Rate this book';
+                const stars = document.createElement('span');
+                stars.className = 'rating-stars';
+                stars.setAttribute('aria-label', 'Not rated yet');
+                stars.textContent = '★★★★★';
+                actions.append(shelfButton, rateLabel, stars);
+                row.append(details, actions);
+                bookList.append(row);
+            });
+        }
+
+        function filterBooks() {
+            const query = searchInput.value.trim().toLocaleLowerCase();
+            const matches = allBooks.filter((book) =>
+                `${book.title} ${book.author} ${book.description || ''}`.toLocaleLowerCase().includes(query)
+            );
+            renderBooks(matches);
+        }
+
+        function renderShelf(books) {
+            shelfList.replaceChildren();
+            if (books.length === 0) {
+                const emptyMessage = document.createElement('p');
+                emptyMessage.className = 'notice';
+                emptyMessage.textContent = 'Your shelf is empty. Add a book to get started.';
+                shelfList.append(emptyMessage);
+                return;
+            }
+
+            books.forEach((book, index) => {
+                const item = document.createElement('article');
+                item.className = 'shelf-item';
+                item.append(makeCover(book, index));
+                const copy = document.createElement('div');
+                copy.className = 'shelf-item-copy';
+                const title = document.createElement('h3');
+                title.className = 'shelf-item-title';
+                title.textContent = book.title;
+                const author = document.createElement('p');
+                author.className = 'shelf-item-author';
+                author.textContent = book.author;
+                copy.append(title, author);
+                const status = document.createElement('p');
+                status.className = 'shelf-status';
+                status.textContent = book.status.replaceAll('_', ' ');
+                item.append(copy, status);
+                shelfList.append(item);
+            });
+        }
+
         async function loadCatalog() {
             try {
                 const response = await fetch(API_URL);
-                const books = await response.json();
-                const catalogContainer = document.getElementById('catalog');
-                catalogContainer.innerHTML = '';
-
-                books.forEach(book => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-white p-4 rounded-lg shadow hover:shadow-md transition flex flex-col justify-between';
-                    card.innerHTML = `
-                        <div>
-                            <div class="w-full h-32 bg-orange-100 text-orange-400 rounded mb-3 flex items-center justify-center text-sm font-bold">RAAMAT</div>
-                            <h3 class="font-bold text-lg leading-tight text-gray-900">${book.title}</h3>
-                            <p class="text-gray-600 text-sm mb-2">Autor: ${book.author}</p>
-                            <p class="text-gray-500 text-xs line-clamp-3">${book.description || 'Kirjeldus puudub.'}</p>
-                        </div>
-                        <div class="mt-4 pt-2 border-t border-gray-100">
-                            <button onclick="addToShelf(${book.id}, 'reading')" class="w-full bg-orange-500 text-white text-sm py-2 rounded hover:bg-orange-600 transition font-medium">
-                                Soovin lugeda
-                            </button>
-                        </div>
-                    `;
-                    catalogContainer.appendChild(card);
-                });
+                if (!response.ok) {
+                    throw new Error(`Could not load books (${response.status}).`);
+                }
+                allBooks = await response.json();
+                setNotice(catalogNotice, '');
+                filterBooks();
             } catch (error) {
-                console.error('Viga kataloogi laadimisel:', error);
+                console.error('Error loading books:', error);
+                resultsCount.textContent = 'Books could not be loaded';
+                setNotice(catalogNotice, 'We could not load the book list. Please try again later.', true);
             }
         }
 
-        // Saadab POST päringu uue raamatu lisamiseks andmebaasi
-        async function createNewBook(event) {
+        async function loadUserShelf() {
+            try {
+                const response = await fetch(`${API_URL}/shelf/${USER_ID}`);
+                if (!response.ok) {
+                    throw new Error(`Could not load your shelf (${response.status}).`);
+                }
+                const books = await response.json();
+                shelfIds = new Set(books.map((book) => book.id));
+                renderShelf(books);
+                filterBooks();
+                setNotice(shelfNotice, '');
+            } catch (error) {
+                console.error('Error loading shelf:', error);
+                setNotice(shelfNotice, 'Your shelf could not be loaded. Please try again later.', true);
+            }
+        }
+
+        async function addToShelf(book) {
+            try {
+                const response = await fetch(`${API_URL}/shelf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: USER_ID, book_id: book.id, status: 'want_to_read' })
+                });
+                if (!response.ok) {
+                    const result = await response.json().catch(() => ({}));
+                    throw new Error(result.error || `Could not add this book (${response.status}).`);
+                }
+                await loadUserShelf();
+            } catch (error) {
+                console.error('Error adding book to shelf:', error);
+                setNotice(shelfNotice, error.message || 'This book could not be added to your shelf.', true);
+            }
+        }
+
+        function openModal() {
+            formError.hidden = true;
+            modal.hidden = false;
+            document.getElementById('book-title').focus();
+        }
+
+        function closeModal() {
+            modal.hidden = true;
+            addBookForm.reset();
+            formError.hidden = true;
+        }
+
+        async function createBook(event) {
             event.preventDefault();
-            const title = document.getElementById('bookTitle').value;
-            const author = document.getElementById('bookAuthor').value;
-            const description = document.getElementById('bookDescription').value;
+            const formData = new FormData(addBookForm);
+            const book = {
+                title: formData.get('title').trim(),
+                author: formData.get('author').trim(),
+                description: formData.get('description').trim()
+            };
 
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, author, description })
+                    body: JSON.stringify(book)
                 });
-
-                if (response.ok) {
-                    toggleModal(false);
-                    loadCatalog(); // Uuendab kataloogi ekraanil
-                } else {
-                    alert('Viga raamatu lisamisel!');
+                if (!response.ok) {
+                    const result = await response.json().catch(() => ({}));
+                    throw new Error(result.error || `Could not save this book (${response.status}).`);
                 }
+                closeModal();
+                await loadCatalog();
             } catch (error) {
-                console.error('Süsteemi viga raamatu loomisel:', error);
+                console.error('Error creating book:', error);
+                formError.textContent = error.message || 'The book could not be saved. Please try again.';
+                formError.hidden = false;
             }
         }
 
-        // Saadab POST päringu raamatu lisamiseks kasutaja riiulile
-        async function addToShelf(bookId, status) {
-            try {
-                const response = await fetch(`${API_URL}/shelf`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: USER_ID, book_id: bookId, status: status })
-                });
-                
-                if (response.ok) {
-                    loadUserShelf(); // Uuendab kasutaja riiulit ekraanil
-                }
-            } catch (error) {
-                console.error('Viga riiulile lisamisel:', error);
+        document.getElementById('search-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            filterBooks();
+        });
+        searchInput.addEventListener('input', filterBooks);
+        document.getElementById('add-book-action').addEventListener('click', openModal);
+        document.getElementById('browse-books').addEventListener('click', () => {
+            document.getElementById('book-list').scrollIntoView({ behavior: 'smooth' });
+        });
+        document.getElementById('close-modal').addEventListener('click', closeModal);
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeModal();
             }
-        }
-
-        // Laeb andmebaasist konkreetse kasutaja riiulil olevad raamatud
-        async function loadUserShelf() {
-            try {
-                const response = await fetch(`${API_URL}/shelf/${USER_ID}`);
-                const shelfBooks = await response.json();
-                const shelfContainer = document.getElementById('my-shelf');
-                
-                if (shelfBooks.length === 0) {
-                    shelfContainer.innerHTML = '<p class="text-gray-500 text-sm">Riiul on tühi.</p>';
-                    return;
-                }
-
-                shelfContainer.innerHTML = '';
-                shelfBooks.forEach(book => {
-                    const item = document.createElement('div');
-                    item.className = 'flex items-center gap-3 p-2 bg-gray-50 rounded border border-gray-100';
-                    item.innerHTML = `
-                        <div class="w-8 h-10 bg-orange-100 text-orange-500 flex items-center justify-center font-bold text-[10px] rounded">Book</div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-sm truncate text-gray-900">${book.title}</h4>
-                            <p class="text-gray-500 text-xs truncate">${book.author}</p>
-                        </div>
-                        <span class="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">Loen</span>
-                    `;
-                    shelfContainer.appendChild(item);
-                });
-            } catch (error) {
-                console.error('Viga riiuli laadimisel:', error);
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !modal.hidden) {
+                closeModal();
             }
-        }
+        });
+        addBookForm.addEventListener('submit', createBook);
 
-        // Rakenduse käivitamine lehe laadimisel
         loadCatalog();
         loadUserShelf();
     </script>
