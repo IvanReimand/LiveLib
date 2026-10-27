@@ -9,17 +9,21 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // Позволяет Express читать JSON в теле запросов (req.body)
+app.use(express.json()); // lubab expressil töödelda JSON-kehasid
+app.use(express.static('public'));
 
-// Подключение маршрутов
+
+app.use(express.static('public'));
+
+// ühendame raamatute marsruudid
 app.use('/api/books', bookRoutes);
 
-// Базовый тестовый маршрут
+// testimiseks lihtne marsruut
 app.get('/', (req, res) => {
     res.send('LiveLib Clone API работает!');
 });
 
-// Запуск сервера
+// serveri käivitamine
 app.listen(PORT, () => {
-    console.log(`Сервер успешно запущен на порту ${PORT}`);
+    console.log(`Server successfully started on port ${PORT}`);
 });

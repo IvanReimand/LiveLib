@@ -1,15 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const db = require('../config/db'); // ühendame andmebaasi
 
-// Временные фейковые данные для теста (вместо БД)
-const mockBooks = [
-    { id: 1, title: "1984", author: "Джордж Оруэлл" },
-    { id: 2, title: "Мастер и Маргарита", author: "Михаил Булгаков" }
-];
-
-// Маршрут для получения всех книг
+// Hankida kõik raamatud andmebaasist
 router.get('/', (req, res) => {
-    res.json(mockBooks);
+    const sql = "SELECT * FROM books";
+    
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows);
+    });
 });
 
 module.exports = router;
