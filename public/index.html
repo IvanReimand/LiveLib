@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveLib Kloon — Minu Raamatukogu</title>
+    <!-- Tailwind CSS disaini jaoks -->
+    <script src="https://tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+    <!-- Päis / Header -->
+    <header class="bg-orange-500 text-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide">📚 LiveLib <span class="text-sm font-normal bg-orange-700 px-2 py-1 rounded">College Edition</span></h1>
+            <div class="flex items-center gap-4">
+                <!-- Nupp uue raamatu lisamise vormi avamiseks -->
+                <button onclick="toggleModal(true)" class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded transition shadow">
+                    + Lisa uus raamat
+                </button>
+                <span class="font-medium text-sm hidden sm:inline">Kasutaja ID: 1</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Peamine sisu -->
+    <main class="container mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <!-- Vasak veerg: Raamatute kataloog -->
+        <div class="md:col-span-2">
+            <h2 class="text-xl font-bold mb-4 flex items-center">📖 Raamatute kataloog</h2>
+            <div id="catalog" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <p class="text-gray-500">Kataloogi laadimine...</p>
+            </div>
+        </div>
+
+        <!-- Parem veerg: Kasutaja riiul -->
+        <div class="bg-white p-6 rounded-lg shadow-md h-fit">
+            <h2 class="text-xl font-bold mb-4 text-orange-600">🧡 Minu riiul ("Loen")</h2>
+            <div id="my-shelf" class="space-y-4">
+                <p class="text-gray-500 text-sm">Riiul on tühi. Lisa raamat kataloogist!</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modaalaken (Vorm uue raamatu lisamiseks) -->
+    <div id="bookModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Lisa uus raamat andmebaasi</h3>
+                <button onclick="toggleModal(false)" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+            </div>
+            <form id="addBookForm" onsubmit="createNewBook(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-1">Pealkiri *</label>
+                    <input type="text" id="bookTitle" required class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:border-orange-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-1">Autor *</label>
+                    <input type="text" id="bookAuthor" required class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:border-orange-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-1">Kirjeldus</label>
+                    <textarea id="bookDescription" rows="3" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:border-orange-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="toggleModal(false)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded font-medium text-sm transition">Tühista</button>
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium text-sm transition">Salvesta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Kliendipoolne loogika (Frontend JavaScript) -->
+    <script>
+        const API_URL = 'http://localhost:5000/api/books';
+        const USER_ID = 1; // Testkasutaja ID (MVP jaoks)
+
+        // Avab või sulgeb uue raamatu lisamise akna
+        function toggleModal(show) {
+            const modal = document.getElementById('bookModal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+                document.getElementById('addBookForm').reset();
+            }
+        }
+
+        // Laeb kõik raamatud andmebaasist ja kuvab kataloogis
+        async function loadCatalog() {
+            try {
+                const response = await fetch(API_URL);
+                const books = await response.json();
+                const catalogContainer = document.getElementById('catalog');
+                catalogContainer.innerHTML = '';
+
+                books.forEach(book => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-lg shadow hover:shadow-md transition flex flex-col justify-between';
+                    card.innerHTML = `
+                        <div>
+                            <div class="w-full h-32 bg-orange-100 text-orange-400 rounded mb-3 flex items-center justify-center text-sm font-bold">RAAMAT</div>
+                            <h3 class="font-bold text-lg leading-tight text-gray-900">${book.title}</h3>
+                            <p class="text-gray-600 text-sm mb-2">Autor: ${book.author}</p>
+                            <p class="text-gray-500 text-xs line-clamp-3">${book.description || 'Kirjeldus puudub.'}</p>
+                        </div>
+                        <div class="mt-4 pt-2 border-t border-gray-100">
+                            <button onclick="addToShelf(${book.id}, 'reading')" class="w-full bg-orange-500 text-white text-sm py-2 rounded hover:bg-orange-600 transition font-medium">
+                                Soovin lugeda
+                            </button>
+                        </div>
+                    `;
+                    catalogContainer.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Viga kataloogi laadimisel:', error);
+            }
+        }
+
+        // Saadab POST päringu uue raamatu lisamiseks andmebaasi
+        async function createNewBook(event) {
+            event.preventDefault();
+            const title = document.getElementById('bookTitle').value;
+            const author = document.getElementById('bookAuthor').value;
+            const description = document.getElementById('bookDescription').value;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, author, description })
+                });
+
+                if (response.ok) {
+                    toggleModal(false);
+                    loadCatalog(); // Uuendab kataloogi ekraanil
+                } else {
+                    alert('Viga raamatu lisamisel!');
+                }
+            } catch (error) {
+                console.error('Süsteemi viga raamatu loomisel:', error);
+            }
+        }
+
+        // Saadab POST päringu raamatu lisamiseks kasutaja riiulile
+        async function addToShelf(bookId, status) {
+            try {
+                const response = await fetch(`${API_URL}/shelf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: USER_ID, book_id: bookId, status: status })
+                });
+                
+                if (response.ok) {
+                    loadUserShelf(); // Uuendab kasutaja riiulit ekraanil
+                }
+            } catch (error) {
+                console.error('Viga riiulile lisamisel:', error);
+            }
+        }
+
+        // Laeb andmebaasist konkreetse kasutaja riiulil olevad raamatud
+        async function loadUserShelf() {
+            try {
+                const response = await fetch(`${API_URL}/shelf/${USER_ID}`);
+                const shelfBooks = await response.json();
+                const shelfContainer = document.getElementById('my-shelf');
+                
+                if (shelfBooks.length === 0) {
+                    shelfContainer.innerHTML = '<p class="text-gray-500 text-sm">Riiul on tühi.</p>';
+                    return;
+                }
+
+                shelfContainer.innerHTML = '';
+                shelfBooks.forEach(book => {
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center gap-3 p-2 bg-gray-50 rounded border border-gray-100';
+                    item.innerHTML = `
+                        <div class="w-8 h-10 bg-orange-100 text-orange-500 flex items-center justify-center font-bold text-[10px] rounded">Book</div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-sm truncate text-gray-900">${book.title}</h4>
+                            <p class="text-gray-500 text-xs truncate">${book.author}</p>
+                        </div>
+                        <span class="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">Loen</span>
+                    `;
+                    shelfContainer.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Viga riiuli laadimisel:', error);
+            }
+        }
+
+        // Rakenduse käivitamine lehe laadimisel
+        loadCatalog();
+        loadUserShelf();
+    </script>
+</body>
+</html>

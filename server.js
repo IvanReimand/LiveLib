@@ -7,23 +7,15 @@ const bookRoutes = require('./routes/bookRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Middleware seadistamine
 app.use(cors());
-app.use(express.json()); // lubab expressil töödelda JSON-kehasid
-app.use(express.static('public'));
+app.use(express.json()); // Võimaldab lugeda JSON andmeid päringu kehast (req.body)
+app.use(express.static('public')); // Serveerib frontend faile 'public' kaustast
 
-
-app.use(express.static('public'));
-
-// ühendame raamatute marsruudid
+// API marsruudid (Routes)
 app.use('/api/books', bookRoutes);
 
-// testimiseks lihtne marsruut
-app.get('/', (req, res) => {
-    res.send('LiveLib Clone API работает!');
-});
-
-// serveri käivitamine
+// Serveri käivitamine
 app.listen(PORT, () => {
-    console.log(`Server successfully started on port ${PORT}`);
+    console.log(`Server töötab pordil ${PORT}`);
 });
