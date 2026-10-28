@@ -211,6 +211,19 @@
             background: #eaae3a;
         }
 
+        .promo-button {
+            flex: 0 0 auto;
+            border-radius: 3px;
+            padding: 7px 11px;
+            background: #f7bd4c;
+            color: #30261a;
+            text-decoration: none;
+        }
+
+        .promo-button:hover {
+            background: #eaae3a;
+        }
+
         main {
             width: min(904px, calc(100% - 32px));
             margin: 0 auto;
@@ -688,7 +701,10 @@
                     </svg>
                 </button>
             </form>
-            <button class="nav-action join-action" id="add-book-action" type="button">+ Add a book</button>
+            <a class="nav-action auth-link" href="/auth.html">Sign In</a>
+            <a class="nav-action join-action auth-link" href="/auth.html">Join</a>
+            <button class="nav-action" id="logout-action" type="button" hidden>Sign out</button>
+            <button class="nav-action" id="add-book-action" type="button">+ Add a book</button>
         </nav>
     </header>
 
@@ -697,7 +713,7 @@
             <strong>Discover new books on LiveLib</strong>
             <span>Meet your next favorite book</span>
         </div>
-        <button id="browse-books" type="button">Browse books</button>
+        <a class="promo-button" href="/auth.html">Join LiveLib</a>
     </aside>
 
     <main>
@@ -743,7 +759,7 @@
 
     <script>
         const API_URL = '/api/books';
-        const USER_ID = 1;
+        let USER_ID = null;
         const coverColors = [
             ['#c5a45e', '#66503b'],
             ['#425b45', '#14251f'],
@@ -879,7 +895,15 @@
             if (books.length === 0) {
                 const emptyMessage = document.createElement('p');
                 emptyMessage.className = 'notice';
-                emptyMessage.textContent = 'Your shelf is empty. Add a book to get started.';
+                if (USER_ID) {
+                    emptyMessage.textContent = 'Your shelf is empty. Add a book to get started.';
+                } else {
+                    emptyMessage.append('Sign in to see your personal shelf. ');
+                    const signInLink = document.createElement('a');
+                    signInLink.href = '/auth.html';
+                    signInLink.textContent = 'Sign in or create an account';
+                    emptyMessage.append(signInLink, '.');
+                }
                 shelfList.append(emptyMessage);
                 return;
             }
@@ -922,6 +946,13 @@
         }
 
         async function loadUserShelf() {
+            if (!USER_ID) {
+                shelfIds = new Set();
+                renderShelf([]);
+                filterBooks();
+                return;
+            }
+
             try {
                 const response = await fetch(`${API_URL}/shelf/${USER_ID}`);
                 if (!response.ok) {
@@ -939,11 +970,16 @@
         }
 
         async function addToShelf(book) {
+            if (!USER_ID) {
+                window.location.href = '/auth.html';
+                return;
+            }
+
             try {
                 const response = await fetch(`${API_URL}/shelf`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: USER_ID, book_id: book.id, status: 'want_to_read' })
+                    body: JSON.stringify({ book_id: book.id, status: 'want_to_read' })
                 });
                 if (!response.ok) {
                     const result = await response.json().catch(() => ({}));
@@ -1002,10 +1038,19 @@
         });
         searchInput.addEventListener('input', filterBooks);
         document.getElementById('add-book-action').addEventListener('click', openModal);
-        document.getElementById('browse-books').addEventListener('click', () => {
-            document.getElementById('book-list').scrollIntoView({ behavior: 'smooth' });
-        });
         document.getElementById('close-modal').addEventListener('click', closeModal);
+        document.getElementById('logout-action').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/auth/logout', { method: 'POST' });
+                if (!response.ok) {
+                    throw new Error(`Could not sign out (${response.status}).`);
+                }
+                window.location.reload();
+            } catch (error) {
+                console.error('Error signing out:', error);
+                setNotice(shelfNotice, 'You could not be signed out. Please try again.', true);
+            }
+        });
         modal.addEventListener('click', (event) => {
             if (event.target === modal) {
                 closeModal();
@@ -1018,8 +1063,27 @@
         });
         addBookForm.addEventListener('submit', createBook);
 
-        loadCatalog();
-        loadUserShelf();
+        async function initializePage() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) {
+                    throw new Error(`Could not check your sign-in (${response.status}).`);
+                }
+                const result = await response.json();
+                USER_ID = result.user ? result.user.id : null;
+                if (result.user) {
+                    document.querySelectorAll('.auth-link').forEach((link) => { link.hidden = true; });
+                    document.getElementById('logout-action').hidden = false;
+                }
+            } catch (error) {
+                console.error('Error checking sign-in:', error);
+                setNotice(shelfNotice, 'Your sign-in status could not be checked. Please refresh the page.', true);
+            }
+
+            await Promise.all([loadCatalog(), loadUserShelf()]);
+        }
+
+        initializePage();
     </script>
 </body>
 </html>

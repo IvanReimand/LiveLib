@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db'); // Andmebaasi ühendus
+const { requireAuth } = require('./authRoutes');
 
 // 1. GET /api/books - Laeb kõik raamatud andmebaasist
 router.get('/', (req, res) => {
@@ -33,15 +34,15 @@ router.post('/', (req, res) => {
 });
 
 // 3. POST /api/books/shelf - Lisab raamatu kasutaja riiulile või uuendab staatust
-router.post('/shelf', (req, res) => {
-    const { user_id, book_id, status } = req.body;
+router.post('/shelf', requireAuth, (req, res) => {
+    const { book_id, status } = req.body;
 
-    if (!user_id || !book_id || !status) {
-        return res.status(400).json({ error: "Andmed (user_id, book_id, status) on puudu" });
+    if (!Number.isInteger(book_id) || book_id < 1 || !['want_to_read', 'reading', 'read'].includes(status)) {
+        return res.status(400).json({ error: "A valid book and shelf status are required." });
     }
 
     const checkSql = "SELECT * FROM user_books WHERE user_id = ? AND book_id = ?";
-    db.get(checkSql, [user_id, book_id], (err, row) => {
+    db.get(checkSql, [req.userId, book_id], (err, row) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -49,7 +50,7 @@ router.post('/shelf', (req, res) => {
         if (row) {
             // Kui raamat on juba riiulil, uuendame staatust
             const updateSql = "UPDATE user_books SET status = ? WHERE user_id = ? AND book_id = ?";
-            db.run(updateSql, [status, user_id, book_id], function(err) {
+            db.run(updateSql, [status, req.userId, book_id], function(err) {
                 if (err) {
                     return res.status(500).json({ error: err.message });
                 }
@@ -58,7 +59,7 @@ router.post('/shelf', (req, res) => {
         } else {
             // Kui raamatut pole riiulil, lisame uue kirje
             const insertSql = "INSERT INTO user_books (user_id, book_id, status) VALUES (?, ?, ?)";
-            db.run(insertSql, [user_id, book_id, status], function(err) {
+            db.run(insertSql, [req.userId, book_id, status], function(err) {
                 if (err) {
                     return res.status(500).json({ error: err.message });
                 }
@@ -69,8 +70,11 @@ router.post('/shelf', (req, res) => {
 });
 
 // 4. GET /api/books/shelf/:user_id - Laeb konkreetse kasutaja riiuli sisu
-router.get('/shelf/:user_id', (req, res) => {
-    const userId = req.params.user_id;
+router.get('/shelf/:user_id', requireAuth, (req, res) => {
+    const userId = Number(req.params.user_id);
+    if (!Number.isSafeInteger(userId) || userId !== req.userId) {
+        return res.status(403).json({ error: "You can only view your own shelf." });
+    }
     const sql = `
         SELECT books.*, user_books.status 
         FROM user_books 
@@ -84,58 +88,6 @@ router.get('/shelf/:user_id', (req, res) => {
         }
         res.json(rows);
     });
-});
-
-// 5. POST /api/books/register - Kasutaja registreerimine andmebaasi
-router.post('/register', (req, res) => {
-const { username, email, password } = req.body; 
-
-if (!username || !email || !password) {
-return res.status(400).json({ error: "Kõik väljad on kohustuslikud" });
-}
-
-// MVP lihtsuse mõttes salvestame parooli puhtalt (kolledži projektis lubatud, kui aega on vähe)
-// Päris projektis kasutataks siin parooli räsipääsu (password_hash)
-const sql = "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)";
-
-db.run(sql, [username, email, password], function(err) {
-if (err) {
-if (err.message.includes('UNIQUE')) {
-return res.status(400).json({ error: "Kasutajanimi või e-post on juba olemas" });
-}
-return res.status(500).json({ error: err.message });
-}
-res.status(201).json({
-message: "Kasutaja registreeritud",
-user: { id: this.lastID, username }
-});
-});
-
-}); 
-
-// 6. POST /api/books/login - Kasutaja sisselogimise kontroll
-router.post('/login', (req, res) => {
-const { username, password } = req.body; 
-
-if (!username || !password) {
-return res.status(400).json({ error: "Kasutajanimi ja parool on kohustuslikud" });
-}
-
-const sql = "SELECT * FROM users WHERE username = ? AND password_hash = ?";
-
-db.get(sql, [username, password], (err, row) => {
-if (err) {
-return res.status(500).json({ error: err.message });
-}
-if (!row) {
-return res.status(401).json({ error: "Vale kasutajanimi või parool" });
-}
-res.json({
-message: "Sisselogimine edukas",
-user: { id: row.id, username: row.username }
-});
-});
-
 });
 
 module.exports = router;

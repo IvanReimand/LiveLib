@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f8f7f5">
+    <title>Verify your email — LiveLib</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #38281d;
+            --muted: #77736f;
+            --green: #399b68;
+            --green-dark: #2f8558;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: #f8f7f5;
+            color: #333;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        a { color: #167b78; }
+
+        .topbar {
+            min-height: 54px;
+            border-bottom: 1px solid #e8e5e2;
+            background: #fff;
+        }
+
+        .topbar-inner {
+            display: flex;
+            width: min(1050px, calc(100% - 32px));
+            min-height: 54px;
+            align-items: center;
+            justify-content: space-between;
+            margin: auto;
+        }
+
+        .brand {
+            color: #211b17;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 25px;
+            letter-spacing: -1.5px;
+            text-decoration: none;
+        }
+
+        main {
+            display: grid;
+            min-height: calc(100vh - 55px);
+            place-items: start center;
+            padding: 54px 16px;
+        }
+
+        .verify-card {
+            width: min(100%, 430px);
+            border: 1px solid #e4e0dc;
+            border-radius: 7px;
+            padding: 30px;
+            background: #fff;
+            box-shadow: 0 4px 18px rgb(46 36 28 / 5%);
+        }
+
+        .mail-icon {
+            display: grid;
+            width: 46px;
+            height: 46px;
+            place-items: center;
+            margin-bottom: 18px;
+            border-radius: 50%;
+            background: #edf7f0;
+            color: #2f8558;
+            font-size: 22px;
+        }
+
+        h1 {
+            margin: 0 0 9px;
+            color: var(--ink);
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 25px;
+        }
+
+        .intro {
+            margin: 0 0 23px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        .field { display: grid; gap: 7px; margin-bottom: 16px; }
+
+        label {
+            color: #4c443d;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        input {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid #d9d4ce;
+            border-radius: 4px;
+            padding: 9px 11px;
+            outline: none;
+            color: #333;
+            font: inherit;
+        }
+
+        input:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 2px rgb(57 155 104 / 12%);
+        }
+
+        input.code {
+            min-height: 52px;
+            font-size: 23px;
+            letter-spacing: 8px;
+            text-align: center;
+        }
+
+        .submit {
+            width: 100%;
+            min-height: 42px;
+            border: 0;
+            border-radius: 4px;
+            background: var(--green);
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .submit:hover { background: var(--green-dark); }
+        .submit:disabled { cursor: wait; opacity: .7; }
+
+        .message {
+            margin: 0 0 15px;
+            border-radius: 4px;
+            padding: 10px 12px;
+            background: #fff0ef;
+            color: #a3312b;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .message.success {
+            background: #edf7f0;
+            color: #276843;
+        }
+
+        .message[hidden] { display: none; }
+
+        .resend {
+            margin: 16px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .resend button {
+            border: 0;
+            padding: 0;
+            background: none;
+            color: #167b78;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        .resend button:disabled {
+            color: #888;
+            cursor: wait;
+            text-decoration: none;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: #655b51;
+            font-size: 13px;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        @media (max-width: 480px) {
+            main { padding-top: 28px; }
+            .verify-card { padding: 23px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <nav class="topbar-inner" aria-label="Main navigation">
+            <a class="brand" href="/">livelib</a>
+            <a href="/">Back to books</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="verify-card" aria-labelledby="verify-title">
+            <div class="mail-icon" aria-hidden="true">✉</div>
+            <h1 id="verify-title">Check your email</h1>
+            <p class="intro">Enter the 6-digit code we sent after you signed up or signed in. The code expires after 10 minutes.</p>
+            <p class="message" id="verify-message" role="alert" hidden></p>
+            <form id="verify-form">
+                <div class="field">
+                    <label for="email">Email address</label>
+                    <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>
+                </div>
+                <div class="field">
+                    <label for="code">Security code</label>
+                    <input class="code" id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" placeholder="000000" aria-describedby="code-hint" required>
+                    <span id="code-hint" class="intro" style="margin:0;font-size:12px">The code contains six numbers.</span>
+                </div>
+                <button class="submit" id="verify-button" type="submit">Verify email</button>
+            </form>
+            <p class="resend">
+                Didn’t receive the email?
+                <button id="resend-button" type="button">Send a new code</button>
+                <span id="resend-countdown" aria-live="polite"></span>
+            </p>
+            <a class="back-link" href="/auth.html">Back to sign in or sign up</a>
+        </section>
+    </main>
+
+    <script>
+        const emailInput = document.getElementById('email');
+        const codeInput = document.getElementById('code');
+        const message = document.getElementById('verify-message');
+        const verifyButton = document.getElementById('verify-button');
+        const resendButton = document.getElementById('resend-button');
+        const countdown = document.getElementById('resend-countdown');
+        let cooldown = 60;
+        let cooldownTimer;
+
+        emailInput.value = sessionStorage.getItem('pendingVerificationEmail') || '';
+
+        function showMessage(text, success = false) {
+            message.textContent = text;
+            message.classList.toggle('success', success);
+            message.hidden = !text;
+        }
+
+        function updateCooldown() {
+            resendButton.disabled = cooldown > 0;
+            countdown.textContent = cooldown > 0 ? ` You can request another code in ${cooldown}s.` : '';
+        }
+
+        function startCooldown(seconds) {
+            window.clearInterval(cooldownTimer);
+            cooldown = seconds;
+            updateCooldown();
+            cooldownTimer = window.setInterval(() => {
+                if (cooldown > 0) {
+                    cooldown -= 1;
+                    updateCooldown();
+                } else {
+                    window.clearInterval(cooldownTimer);
+                }
+            }, 1000);
+        }
+
+        startCooldown(60);
+
+        document.getElementById('verify-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            showMessage('');
+            verifyButton.disabled = true;
+            verifyButton.textContent = 'Verifying…';
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailInput.value.trim(), code: codeInput.value.trim() })
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'The code could not be verified.');
+                }
+                sessionStorage.removeItem('pendingVerificationEmail');
+                showMessage('Your security code is confirmed. Taking you to your books…', true);
+                window.setTimeout(() => { window.location.href = '/'; }, 800);
+            } catch (error) {
+                showMessage(error.message || 'Verification failed. Please try again.');
+            } finally {
+                verifyButton.disabled = false;
+                verifyButton.textContent = 'Verify email';
+            }
+        });
+
+        resendButton.addEventListener('click', async () => {
+            showMessage('');
+            resendButton.disabled = true;
+            try {
+                const response = await fetch('/api/auth/resend-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailInput.value.trim() })
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'A new code could not be sent.');
+                }
+                startCooldown(60);
+                showMessage(result.message, true);
+                codeInput.value = '';
+            } catch (error) {
+                resendButton.disabled = false;
+                showMessage(error.message || 'A new code could not be sent.');
+            }
+        });
+
+        codeInput.addEventListener('input', () => {
+            codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 6);
+        });
+    </script>
+</body>
+</html>

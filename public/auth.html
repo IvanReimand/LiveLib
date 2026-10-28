@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f8f7f5">
+    <title>Sign in or join LiveLib</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #38281d;
+            --muted: #77736f;
+            --green: #399b68;
+            --green-dark: #2f8558;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: #f8f7f5;
+            color: #333;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        a { color: #167b78; }
+
+        .topbar {
+            min-height: 54px;
+            border-bottom: 1px solid #e8e5e2;
+            background: #fff;
+        }
+
+        .topbar-inner {
+            display: flex;
+            width: min(1050px, calc(100% - 32px));
+            min-height: 54px;
+            align-items: center;
+            justify-content: space-between;
+            margin: auto;
+        }
+
+        .brand {
+            color: #211b17;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 25px;
+            letter-spacing: -1.5px;
+            text-decoration: none;
+        }
+
+        .home-link {
+            color: #55473b;
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        main {
+            display: grid;
+            min-height: calc(100vh - 55px);
+            place-items: start center;
+            padding: 54px 16px;
+        }
+
+        .auth-card {
+            width: min(100%, 430px);
+            border: 1px solid #e4e0dc;
+            border-radius: 7px;
+            padding: 30px;
+            background: #fff;
+            box-shadow: 0 4px 18px rgb(46 36 28 / 5%);
+        }
+
+        h1 {
+            margin: 0 0 7px;
+            color: var(--ink);
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 25px;
+        }
+
+        .intro {
+            margin: 0 0 22px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-bottom: 21px;
+            border-radius: 5px;
+            padding: 4px;
+            background: #f4f2ef;
+        }
+
+        .tab {
+            min-height: 37px;
+            border: 0;
+            border-radius: 4px;
+            background: transparent;
+            color: #635b54;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .tab[aria-selected="true"] {
+            background: #fff;
+            color: var(--ink);
+            box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
+        }
+
+        .field { display: grid; gap: 7px; margin-bottom: 16px; }
+        .field[hidden] { display: none; }
+
+        label {
+            color: #4c443d;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        input {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid #d9d4ce;
+            border-radius: 4px;
+            padding: 9px 11px;
+            outline: none;
+            color: #333;
+            font: inherit;
+        }
+
+        input:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 2px rgb(57 155 104 / 12%);
+        }
+
+        .helper {
+            margin: -8px 0 16px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .submit {
+            width: 100%;
+            min-height: 42px;
+            border: 0;
+            border-radius: 4px;
+            background: var(--green);
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .submit:hover { background: var(--green-dark); }
+        .submit:disabled { cursor: wait; opacity: .7; }
+
+        .message {
+            margin: 0 0 15px;
+            border-radius: 4px;
+            padding: 10px 12px;
+            background: #fff0ef;
+            color: #a3312b;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .message.success {
+            background: #edf7f0;
+            color: #276843;
+        }
+
+        .message[hidden] { display: none; }
+
+        .privacy-note {
+            margin: 17px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            main { padding-top: 28px; }
+            .auth-card { padding: 23px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <nav class="topbar-inner" aria-label="Main navigation">
+            <a class="brand" href="/">livelib</a>
+            <a class="home-link" href="/">Back to books</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="auth-card" aria-labelledby="auth-title">
+            <h1 id="auth-title">Welcome to LiveLib</h1>
+            <p class="intro" id="auth-intro">Create an account to save books to your shelf.</p>
+
+            <div class="tabs" role="tablist" aria-label="Account action">
+                <button class="tab" id="register-tab" type="button" role="tab" aria-selected="true" aria-controls="auth-form">Sign up</button>
+                <button class="tab" id="login-tab" type="button" role="tab" aria-selected="false" aria-controls="auth-form">Sign in</button>
+            </div>
+
+            <p class="message" id="auth-message" role="alert" hidden></p>
+            <form id="auth-form">
+                <div class="field">
+                    <label for="email">Email address</label>
+                    <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>
+                </div>
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+                </div>
+                <div class="field" id="confirm-field">
+                    <label for="confirm-password">Confirm password</label>
+                    <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+                </div>
+                <p class="helper" id="password-helper">Use at least 8 characters. We’ll email you a one-time security code to verify your address.</p>
+                <button class="submit" id="submit-button" type="submit">Create account</button>
+            </form>
+            <p class="privacy-note">We’ll only use your email for your LiveLib account and important account messages.</p>
+        </section>
+    </main>
+
+    <script>
+        const form = document.getElementById('auth-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('confirm-password');
+        const confirmField = document.getElementById('confirm-field');
+        const registerTab = document.getElementById('register-tab');
+        const loginTab = document.getElementById('login-tab');
+        const message = document.getElementById('auth-message');
+        const submitButton = document.getElementById('submit-button');
+        let mode = 'register';
+
+        function showMessage(text, success = false) {
+            message.textContent = text;
+            message.classList.toggle('success', success);
+            message.hidden = !text;
+        }
+
+        function setMode(nextMode) {
+            mode = nextMode;
+            const isRegister = mode === 'register';
+            registerTab.setAttribute('aria-selected', String(isRegister));
+            loginTab.setAttribute('aria-selected', String(!isRegister));
+            document.getElementById('auth-title').textContent = isRegister ? 'Create your account' : 'Welcome back';
+            document.getElementById('auth-intro').textContent = isRegister
+                ? 'Sign up to discover books and build your reading shelf.'
+                : 'Sign in to pick up where you left off.';
+            confirmField.hidden = !isRegister;
+            confirmInput.required = isRegister;
+            passwordInput.autocomplete = isRegister ? 'new-password' : 'current-password';
+            document.getElementById('password-helper').textContent = isRegister
+                ? 'Use at least 8 characters. We’ll email you a one-time security code to verify your address.'
+                : 'After your password is confirmed, we’ll email you a one-time sign-in code.';
+            document.getElementById('password-helper').hidden = false;
+            submitButton.textContent = isRegister ? 'Create account' : 'Sign in';
+            showMessage('');
+        }
+
+        registerTab.addEventListener('click', () => setMode('register'));
+        loginTab.addEventListener('click', () => setMode('login'));
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            showMessage('');
+
+            if (mode === 'register' && passwordInput.value !== confirmInput.value) {
+                showMessage('Your passwords do not match.');
+                confirmInput.focus();
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = mode === 'register' ? 'Creating account…' : 'Signing in…';
+            try {
+                const endpoint = mode === 'register' ? '/api/auth/register' : '/api/auth/login';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailInput.value.trim(), password: passwordInput.value })
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    if (mode === 'login' && response.status === 403) {
+                        sessionStorage.setItem('pendingVerificationEmail', emailInput.value.trim());
+                        showMessage(`${result.error} You can continue to the verification page.`);
+                        const verifyLink = document.createElement('a');
+                        verifyLink.href = '/request.html';
+                        verifyLink.textContent = ' Verify email';
+                        message.append(verifyLink);
+                        return;
+                    }
+                    throw new Error(result.error || 'Your request could not be completed.');
+                }
+
+                sessionStorage.setItem('pendingVerificationEmail', result.email || emailInput.value.trim());
+                window.location.href = '/request.html';
+            } catch (error) {
+                showMessage(error.message || 'Something went wrong. Please try again.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = mode === 'register' ? 'Create account' : 'Sign in';
+            }
+        });
+    </script>
+</body>
+</html>

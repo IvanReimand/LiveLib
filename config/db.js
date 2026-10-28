@@ -2,7 +2,9 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // teen faili base andmebaasist
-const dbPath = path.resolve(__dirname, '../database.sqlite');
+const dbPath = process.env.DATABASE_PATH
+    ? path.resolve(process.env.DATABASE_PATH)
+    : path.resolve(__dirname, '../database.sqlite');
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Ошибка подключения к базе данных:', err.message);
@@ -18,7 +20,30 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL
+        password_hash TEXT NOT NULL,
+        email_verified INTEGER NOT NULL DEFAULT 0
+    )`);
+
+    db.all('PRAGMA table_info(users)', [], (err, columns) => {
+        if (err) {
+            console.error('Could not inspect the users table:', err.message);
+            return;
+        }
+        if (!columns.some((column) => column.name === 'email_verified')) {
+            db.run('ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1', (migrationError) => {
+                if (migrationError) {
+                    console.error('Could not add email verification status to existing users:', migrationError.message);
+                }
+            });
+        }
+    });
+
+    db.run(`CREATE TABLE IF NOT EXISTS email_verification_codes (
+        email TEXT PRIMARY KEY,
+        code_hash TEXT NOT NULL,
+        expires_at INTEGER NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_sent_at INTEGER NOT NULL
     )`);
 
     // 2. raamatute tabel
